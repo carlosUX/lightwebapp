@@ -1,3 +1,5 @@
 {
-  "git.ignoreLimitWarning": true
+  "git.ignoreLimitWarning": true,
+  "appService.defaultWebAppToDeploy": "/subscriptions/4b74d7bc-bb7d-4bab-b21c-d1a3493d40fb/resourceGroups/structura-group/providers/Microsoft.Web/sites/structura",
+  "appService.deploySubpath": "frontend"
 }
