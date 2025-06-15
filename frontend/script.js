@@ -6,65 +6,79 @@ document.addEventListener("DOMContentLoaded", function () {
   } else {
     console.error("Button with ID 'generateBtn' not found!");
   }
+
+  // Check if 'marked' is available
+  if (typeof marked === "undefined") {
+    console.error("Marked.js is missing! Ensure it's included in your HTML.");
+  }
 });
 
 async function generate() {
-  const prompt = document.getElementById("prompt").value;
+  const promptElement = document.getElementById("prompt");
+  const resultElement = document.getElementById("result");
+
+  if (!promptElement || !resultElement) {
+    console.error("Missing input or result elements!");
+    return;
+  }
+
+  const prompt = promptElement.value;
 
   if (!prompt) {
-    document.getElementById("result").innerText = "Please enter a prompt!";
+    resultElement.innerText = "Please enter a prompt!";
     return;
   }
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/generate/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt: prompt }),
-    });
+    const response = await fetch(
+      "https://structura-ai.services.ai.azure.com/",
+      //const response = await fetch("http://127.0.0.1:8000/generate/", {
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Ensure API authentication if required
+          Authorization: "Bearer YOUR_API_KEY",
+        },
+        body: JSON.stringify({ prompt: prompt }),
+      }
+    );
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
+      throw new Error(`Error: ${response.status} - ${response.statusText}`);
     }
 
     const result = await response.json();
 
-    // Log full response for debugging
-    console.log("DEBUG: Full API response:", JSON.stringify(result, null, 2));
+    // Debugging: Log the entire API response for validation
+    console.log("DEBUG: API Response:", JSON.stringify(result, null, 2));
 
     let wireframeDescription = "";
 
-    // Using the updated structure from your API response:
+    // Updated response parsing structure
     if (
-      result.message &&
-      result.message.choices &&
-      Array.isArray(result.message.choices) &&
-      result.message.choices.length > 0 &&
-      result.message.choices[0].message &&
-      typeof result.message.choices[0].message.content === "string"
+      result.message?.choices?.length &&
+      typeof result.message.choices[0]?.message?.content === "string"
     ) {
       wireframeDescription = result.message.choices[0].message.content;
     } else if (
-      result.choices &&
-      Array.isArray(result.choices) &&
-      result.choices.length > 0 &&
-      result.choices[0].message &&
-      typeof result.choices[0].message.content === "string"
+      result.choices?.length &&
+      typeof result.choices[0]?.message?.content === "string"
     ) {
       wireframeDescription = result.choices[0].message.content;
     } else {
-      // Fallback: stringifies the entire object if structure doesn't match
       wireframeDescription = JSON.stringify(result, null, 2);
     }
 
-    // Convert Markdown to HTML using Marked and update the page
-    document.getElementById("result").innerHTML =
-      marked.parse(wireframeDescription);
+    // Convert Markdown to HTML using Marked.js
+    if (typeof marked !== "undefined") {
+      resultElement.innerHTML = marked.parse(wireframeDescription);
+    } else {
+      resultElement.innerText = wireframeDescription;
+      console.error("Marked.js not found! Showing plain text instead.");
+    }
   } catch (error) {
     console.error("Request failed:", error);
-    document.getElementById("result").innerText =
-      "Something went wrong. Try again!";
+    resultElement.innerText = `Something went wrong. Error: ${error.message}`;
   }
 }
